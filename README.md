@@ -31,8 +31,6 @@
 - run ansible to install ovirt on GCP
   - running ansible
     ```shell
-    docker run --rm -v $(pwd):/data cytopia/ansible ansible-playbook playbook.yml
-
     function ansible-playbook() {
     docker run --rm \
     -e USER=ansible \
