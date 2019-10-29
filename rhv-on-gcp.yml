@@ -16,9 +16,6 @@
   - name: engine install
     hosts: ocp-rhv-vm-engine
     become: yes
-    vars:
-      engine_fqdn:
-      variable2: 'My first playbook using template'
 
     tasks:
       - name: install engine package
@@ -44,8 +41,3 @@
         until: job_result.finished
         retries: 100
         delay: 10
-
-#      - name: run engine-setup
-#        shell: |
-#               engine-setup --config-append=/tmp/answer-file --accept-defaults
-
