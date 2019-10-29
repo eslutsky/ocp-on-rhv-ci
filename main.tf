@@ -1,7 +1,3 @@
-#todo: create firewal rules for 22
-
-
-
 provider "google" {
   project = "openshift-gce-devel"
   region  = "us-central1"
