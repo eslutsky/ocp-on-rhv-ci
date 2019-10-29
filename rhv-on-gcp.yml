@@ -1,0 +1,51 @@
+---
+  - name: Playbook
+    hosts: gcp-instances
+    become: yes
+    tasks:
+      - name: ensure ovirt-release is at the latest version
+        yum:
+          name:  http://resources.ovirt.org/pub/yum-repo/ovirt-release43.rpm
+          state: latest
+
+      - name: upgrade all packages
+        yum:
+          name: '*'
+          state: latest
+
+  - name: engine install
+    hosts: ocp-rhv-vm-engine
+    become: yes
+    vars:
+      engine_fqdn:
+      variable2: 'My first playbook using template'
+
+    tasks:
+      - name: install engine package
+        yum:
+          name:  ovirt-engine
+          state: latest
+
+      - name: create silent config file for engine installation
+        template:
+          src: engine-answer.j2
+          dest: /tmp/answer-file2
+
+      - name: Async running engine-setup
+        command: engine-setup --config-append=/tmp/answer-file2 --accept-defaults
+        async: 1800
+        poll: 0
+        register: async_results
+
+      - name: 'waiting for installation to finish'
+        async_status:
+          jid: "{{ async_results.ansible_job_id }}"
+        register: job_result
+        until: job_result.finished
+        retries: 100
+        delay: 10
+
+#      - name: run engine-setup
+#        shell: |
+#               engine-setup --config-append=/tmp/answer-file --accept-defaults
+
