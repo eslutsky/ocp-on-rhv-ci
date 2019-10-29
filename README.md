@@ -73,18 +73,3 @@ TODO:
   - [ ] in host: dns masq configuration for nested VMs ovirtmgmt .
   - [ ] port forwarding for the ocp api.
 
-
-
-- https://hub.docker.com/r/philm/ansible_target/
-
-
-
-- installing terraform-inventory
-  ```shell
-  /bin/sh -c
-  wget https://github.com/adammck/terraform-inventory/releases/download/v0.9/ terraform-inventory_0.9_linux_amd64.zip
-
-  unzip -d /tmp/tf terraform-inventory_0.9_linux_amd64.zip  sudo mv /tmp/tf/terraform-inventory /usr/local/bin
-  rm terraform-inventory_0.9_linux_amd64.zip
-  rm -rf /tmp/tf
-  ```
