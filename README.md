@@ -41,7 +41,7 @@
     -v ${HOME}/.ssh/:/home/ansible/.ssh/:ro  -v $(pwd):/data  cytopia/ansible:latest-tools ansible-playbook "$@";
     }
 
-    ansible-playbook  -i ./terraform_gce_inv.py  test.yml
+    ansible-playbook  -i ./terraform_gce_inv.py  rhv-on-gcp.yml
 
     ```
 
