@@ -64,10 +64,12 @@ TODO:
   - [ ] add rhv repo to the host
   - [ ] run add host to engine
 
-
 - prepare rhv host to support nested VMs
   - [ ] sshd Configration
   - [ ] in host: Allow direct root access only from 10.0.0.0/24
   - [ ] in host: dns masq configuration for nested VMs ovirtmgmt .
+
+- prepare OCP on RHV
   - [ ] port forwarding for the ocp api.
+  - [ ] upload latest rhcos image
 

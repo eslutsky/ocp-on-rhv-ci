@@ -27,7 +27,6 @@ variable "rhv-engine-disk-size" {
     type = number
     description = "rhev disk size in Giga"
     default = "40"
-
 }
 
 variable "rhv-host-vcpu" {

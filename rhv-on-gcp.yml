@@ -41,3 +41,44 @@
         until: job_result.finished
         retries: 100
         delay: 10
+
+
+
+  - name: engine install
+    hosts: ocp-rhv-nested-vm-host
+    become: yes
+    vars:
+      pwd_alias: "{{ lookup('password', '/dev/null length=15 chars=ascii_letters') }}"
+
+    tasks:
+      - name: set fact pwd_alias
+        set_fact:
+          root_pass: "{{ pwd_alias }}"
+
+      - debug: msg="root_pass:{{ root_pass }}"
+      - name: change root password
+        user:
+          name: root
+          password: "{{ root_pass | password_hash('sha512', 'rhvongcp')  }}"
+
+      - name: allowing SSH root  access in internal network
+        blockinfile:
+          path: /etc/ssh/sshd_config
+          block: |
+            Match Address 10.0.0.0/24
+                    PermitRootLogin yes
+                    PasswordAuthentication yes
+
+      - name: restart sshd service
+        service:
+          name: sshd
+          state: restarted
+
+
+  - name: add host to engine
+    hosts: ocp-rhv-vm-engine
+    become: yes
+
+    tasks:
+      - name: generate add host to engine silent config
+        debug: msg="adding host to engine"
