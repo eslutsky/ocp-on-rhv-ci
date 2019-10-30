@@ -34,7 +34,7 @@
         poll: 0
         register: async_results
 
-      - name: 'waiting for installation to finish'
+      - name: 'waiting for engine-setup to finish'
         async_status:
           jid: "{{ async_results.ansible_job_id }}"
         register: job_result
@@ -44,11 +44,12 @@
 
 
 
-  - name: engine install
+  - name: configure ssh password
     hosts: ocp-rhv-nested-vm-host
     become: yes
     vars:
-      pwd_alias: "{{ lookup('password', '/dev/null length=15 chars=ascii_letters') }}"
+      #pwd_alias: "{{ lookup('password', '/dev/null length=15 chars=ascii_letters') }}"
+      pwd_alias: "123456"
 
     tasks:
       - name: set fact pwd_alias
@@ -75,10 +76,132 @@
           state: restarted
 
 
+  - name: configure nfs storage
+    hosts: ocp-rhv-nested-vm-host
+    become: yes
+    tasks:
+      - name: install nfs-utils
+        yum:
+          state: latest
+          name: nfs-utils
+
+      - name: create shared folder for NFS
+        file:
+          path: /home/shared
+          state: directory
+          owner: 36
+          group: 107
+
+      - name: create /etc/exports
+        copy:
+          dest: /etc/exports
+          content: |
+            /home/shared *(rw)
+
+      - name: start nfs-server
+        service:
+          name: nfs-server
+          enabled: yes
+          state: started
+
   - name: add host to engine
     hosts: ocp-rhv-vm-engine
     become: yes
 
     tasks:
-      - name: generate add host to engine silent config
-        debug: msg="adding host to engine"
+      - name: create silent config file for engine installation
+        template:
+          src: add-host-to-engine.yml.j2
+          dest: /root/add-host-to-engine.yml
+
+      - name: adding new host to the engine
+        command: ansible-playbook /root/add-host-to-engine.yml
+        register: stdout
+
+      - debug: msg="{{stdout}}"
+
+  - name: configure  networking for nested VMs
+    hosts: ocp-rhv-nested-vm-host
+    become: yes
+    tasks:
+      - name: create directory for dnsmasq
+        file:
+          state: directory
+          path:  /var/lib/dnsmasq/ovirtmgmt
+          recurse: yes
+
+      - name: create dnsmasq configuration
+        copy:
+          dest: /var/lib/dnsmasq/ovirtmgmt/dnsmasq.conf
+          content: |
+            strict-order
+            pid-file=/var/run/libvirt/network/ovirtmgmt.pid
+            except-interface=lo
+            bind-dynamic
+            interface=ovirtmgmt
+            dhcp-range=192.168.200.10,192.168.200.20
+            dhcp-no-override
+            dhcp-authoritative
+            log-queries
+            dhcp-option=3,192.168.200.1
+            local=8.8.8.8
+            domain=gcp.devcluster.openshift.com
+
+      - name: create systemd service for dnsmasq
+        copy:
+          dest: /etc/systemd/system/dnsmasq@.service
+          content: |
+            [Unit]
+            Description=DHCP and DNS caching server for %i.
+            After=vdsmd.service
+
+            [Service]
+            ExecStartPre=-/usr/sbin/ip a add 192.168.200.1/24 dev ovirtmgmt
+            ExecStart=/usr/sbin/dnsmasq -k --conf-file=/var/lib/dnsmasq/%i/dnsmasq.conf
+            ExecReload=/bin/kill -HUP $MAINPID
+            Restart=on-failure
+            RestartSec=5
+
+            [Install]
+            WantedBy=multi-user.target
+
+      - name: enable dnsmasq@ovirtmgmt.service
+        systemd:
+          state: started
+          enabled: yes
+          daemon_reload: yes
+          name: dnsmasq@ovirtmgmt.service
+
+      - name: Set public as default policy
+        command: firewall-cmd --set-default-zone=public
+
+      - name: add ovirtmgmt interface to the zone
+        firewalld:
+          zone: public
+          interface: ovirtmgmt
+          permanent: yes
+          state: enabled
+
+      - name: enable masquerade on public zone
+        firewalld:
+          masquerade: yes
+          state: present
+          permanent: yes
+          zone: public
+
+      - name: add dhcp service to public zone
+        firewalld:
+          service: dhcp
+          state: enabled
+          permanent: yes
+          zone: public
+
+      - name: firewalld reload
+        command: firewall-cmd --reload
+
+
+
+
+
+#reference: https://github.com/tmichett/RHV_Infrastructure/tree/ab3517e6e884e57d089b72f6236d20f77143bb49/Ansible_Playbooks
+

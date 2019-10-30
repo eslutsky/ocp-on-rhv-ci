@@ -1,0 +1,52 @@
+---
+  - name: add host to engine
+    hosts: localhost
+    connection: local
+#    become: yes
+    pre_tasks:
+      - name: Login to RHV
+        ovirt_auth:
+          url: "https://localhost/ovirt-engine/api"
+          username: "admin@internal"
+          password: "123456"
+          ca_file: "/etc/pki/ovirt-engine/ca.pem"
+          insecure: "true"
+        tags:
+          - always
+    vars:
+      data_center_name: Default
+      cluster_name: Default
+      cluster_description: Default Cluster
+      root_password: 123456
+{% raw %}
+    tasks:
+      - name: Add Host ocp-rhv-nested-vm-host to the Cluster
+        ovirt_host:
+          auth: "{{ ovirt_auth }}"
+          cluster: "{{ cluster_name }}"
+          state: present
+          name: ocp-rhv-nested-vm-host
+          address: ocp-rhv-nested-vm-host
+          password: "{{ root_password }}"
+
+      - name: Setup NFS Storage Data Domain
+        ovirt_storage_domain:
+          auth: "{{ ovirt_auth }}"
+          data_center: "{{ data_center_name }}"
+          host: ocp-rhv-nested-vm-host
+          nfs:
+            address: 127.0.0.1
+            path: /home/shared
+            version: v4
+          name: nfs-storage
+          domain_function: data
+          state: present
+          wipe_after_delete: no
+
+
+    post_tasks:
+      - name: Logout from RHV
+        ovirt_auth:
+          state: absent
+          ovirt_auth: "{{ ovirt_auth }}"
+{% endraw %}
