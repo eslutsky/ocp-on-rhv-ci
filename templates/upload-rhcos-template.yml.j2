@@ -1,0 +1,59 @@
+- hosts: localhost
+  gather_facts: no
+  connection: local
+
+  vars:
+    installer: /bin/openshift-install
+    engine_url: https://localhost/ovirt-engine/api
+    engine_user: admin@internal
+    engine_password: 123456
+    engine_cafile: /etc/pki/ovirt-engine/ca.pem
+    engine_insecure: true
+    template_cluster: Default
+    template_name: rhcos-master
+    template_memory: 4GiB
+    template_cpu: 2
+    template_disk_size: 10GiB
+    template_disk_storage: nfs-storage
+    template_seal: false
+    template_timeout: 600
+    image_download_timeout: 600
+    qcow_path: /tmp/rhcos.qcow2
+    qcow_url: file:///tmp/rhcos.qcow2
+
+{% raw %}
+  pre_tasks:
+    # the tasks here are for extractig the openstack qcow image
+    # which is pinned to the installer binary and is
+    # equivalent to invoking this:
+    # curl -s https://raw.githubusercontent.com/openshift/installer/$(openshift-install version | grep -oP '(?<=commit ).*')/data/data/rhcos.json  | jq -r '.baseURI + .images.openstack.path'
+
+    # - name: validate openshift-installer binary is accesible
+    #  stat:
+    #    path: "{{ installer }}"
+    #  register: result
+
+    # - name: extract the intaller pinned commit
+    # shell: "{{ installer }} version | grep -oP '(?<=commit ).*'"
+    # register: commit
+
+    # till we have ci building images for us, using the master commit
+    # and not {{ commit.stdout }}
+    - name: extrat the rhcos url
+      uri:
+        url: "https://raw.githubusercontent.com/openshift/installer/master/data/data/rhcos.json"
+      register: result
+
+    - name: extract the openstack image
+      set_fact:
+        qcow_url_compressed: "{{ result.json.baseURI + result.json.images.openstack.path }}"
+
+    - name: download and uncompress
+      command: "curl --compressed -J -L -o {{ qcow_path }}  {{ qcow_url_compressed }}"
+      register: download
+
+{% endraw %}
+
+  roles:
+    - oVirt.image-template
+

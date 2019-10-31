@@ -42,13 +42,10 @@
         retries: 100
         delay: 10
 
-
-
   - name: configure ssh password
     hosts: ocp-rhv-nested-vm-host
     become: yes
     vars:
-      #pwd_alias: "{{ lookup('password', '/dev/null length=15 chars=ascii_letters') }}"
       pwd_alias: "123456"
 
     tasks:
@@ -56,7 +53,6 @@
         set_fact:
           root_pass: "{{ pwd_alias }}"
 
-      - debug: msg="root_pass:{{ root_pass }}"
       - name: change root password
         user:
           name: root
@@ -185,23 +181,57 @@
       - name: enable masquerade on public zone
         firewalld:
           masquerade: yes
-          state: present
-          permanent: yes
-          zone: public
-
-      - name: add dhcp service to public zone
-        firewalld:
-          service: dhcp
           state: enabled
           permanent: yes
           zone: public
 
+      - name: add service to firewalld in public zone.
+        firewalld:
+          service: "{{ item }}"
+          state: enabled
+          permanent: yes
+          zone: public
+        with_items:
+          - dhcp
+          - dhcpv6-client
+          - cockpit
+          - dns
+          - https
+          - libvirt-tls
+          - ovirt-imageio
+          - ovirt-vmconsole
+          - snmp
+          - ssh
+          - vdsm
       - name: firewalld reload
         command: firewall-cmd --reload
 
 
+  - name: create rchos tempate
+    hosts: ocp-rhv-vm-engine
+    become: yes
+
+    tasks:
+      - name: create yaml file for rhcos upload
+        template:
+          src: upload-rhcos-template.yml.j2
+          dest: /root/upload-rhcos-template.yml
+
+      - name: upload rhcos image + create template
+        command: ansible-playbook /root/upload-rhcos-template.yml
+        register: stdout
+
+  - name: create port forwarding rules for ocp services
+    hosts: ocp-rhv-nested-vm-host
+    become: yes
+    tasks:
+      - name: create port forwarding rules for ocp vm services
+        firewalld:
+          rich_rule: rule  family=ipv4 forward-port port=6443 protocol=tcp to-port=6443 to-addr=192.168.200.30
+          zone: public
+          permanent: yes
+          immediate: yes
+          state: enabled
 
 
-
-#reference: https://github.com/tmichett/RHV_Infrastructure/tree/ab3517e6e884e57d089b72f6236d20f77143bb49/Ansible_Playbooks
 

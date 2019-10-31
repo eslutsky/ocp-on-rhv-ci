@@ -78,6 +78,7 @@ TODO:
   - [X] in host: dns masq configuration for nested VMs ovirtmgmt .
 
 - prepare OCP on RHV
-  - [ ] port forwarding for the ocp api.
-  - [ ] upload latest rhcos image
+- - [X] upload latest rhcos image
+  - [X] port forwarding for the ocp api.
+
 
