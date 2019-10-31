@@ -206,6 +206,10 @@
       - name: firewalld reload
         command: firewall-cmd --reload
 
+      - name: sleeping 120
+        pause:
+          seconds: 120
+
 
   - name: create rchos tempate
     hosts: ocp-rhv-vm-engine
@@ -220,6 +224,7 @@
       - name: upload rhcos image + create template
         command: ansible-playbook /root/upload-rhcos-template.yml
         register: stdout
+
 
   - name: create port forwarding rules for ocp services
     hosts: ocp-rhv-nested-vm-host

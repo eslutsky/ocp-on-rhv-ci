@@ -80,5 +80,6 @@ TODO:
 - prepare OCP on RHV
 - - [X] upload latest rhcos image
   - [X] port forwarding for the ocp api.
-
+  - [ ] check engine version to support  correct ignition params.
+  - [ ] cluster customization: optimization , Memory optimization - allow scheduling  150% of physical memory
 
