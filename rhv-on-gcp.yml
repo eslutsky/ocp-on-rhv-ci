@@ -5,7 +5,7 @@
     tasks:
       - name: ensure ovirt-release is at the latest version
         yum:
-          name:  http://resources.ovirt.org/pub/yum-repo/ovirt-release43.rpm
+          name:  http://resources.ovirt.org/pub/yum-repo/ovirt-release43-snapshot.rpm
           state: latest
 
       - name: upgrade all packages
