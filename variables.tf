@@ -32,13 +32,13 @@ variable "rhv-engine-disk-size" {
 variable "rhv-host-vcpu" {
     type = number
     description = "virtual cpu count"
-    default = 8
+    default = 12
 }
 
 variable "rhv-host-memory" {
     type = number
     description = "memory in mega"
-    default = 40960
+    default = 51200
 }
 
 variable "rhv-host-disk-size" {
