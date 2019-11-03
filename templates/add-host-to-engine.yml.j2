@@ -43,12 +43,11 @@
           state: present
           wipe_after_delete: no
 
-    - name: change Default cluster to 150 Memory .
-      ovirt_cluster:
-        auth: "{{ ovirt_auth }}"
-        name: Default
-        memory_policy: server
-
+      - name: change Default cluster
+        ovirt_cluster:
+          auth: "{{ ovirt_auth }}"
+          name: "{{ cluster_name }}"
+          memory_policy: "server"
 
     post_tasks:
       - name: Logout from RHV
