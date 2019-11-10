@@ -78,10 +78,15 @@ TODO:
   - [X] in host: dns masq configuration for nested VMs ovirtmgmt .
 
 - prepare OCP on RHV
-- - [X] upload latest rhcos image
+  - [X] upload latest rhcos image
   - [X] port forwarding for the ocp api.
   - [X] cluster customization: optimization , Memory optimization - memory_policy allow scheduling  150% of physical memory
-  - [ ] check engine version to support  correct ignition params.
+  - [X] check engine version to support  correct ignition params.
   - [ ] add dns static reservation
   - [ ] add check lookup reservation
+
+- Scale UP Ovirt  Cluster
+  - [ ] use terraform to bring up additional X hosts
+  - [ ] use ansible to add the new Hosts to the engine
+
 
