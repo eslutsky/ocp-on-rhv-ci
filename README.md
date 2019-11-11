@@ -36,7 +36,7 @@
     -e USER=ansible \
     -e MY_UID=$(id -u) \
     -e MY_GID=$(id -g) \
-    -v ${HOME}/.ssh/:/home/ansible/.ssh/:ro  -v $(pwd):/data eslutsky/ansible:latest-toolsansible-playbook "$@";
+    -v ${HOME}/.ssh/:/home/ansible/.ssh/:ro  -v $(pwd):/data eslutsky/ansible:latest-tools ansible-playbook "$@";
     }
 
     function ansible() {
@@ -48,16 +48,28 @@
     }
 
 
-    function ansible-tools() {
+    function ansible-inventory() {
     docker run --rm \
     -e USER=ansible \
     -e MY_UID=$(id -u) \
     -e MY_GID=$(id -g) \
-    -v ${HOME}/.ssh/:/home/ansible/.ssh/:ro  -v $(pwd):/data eslutsky/ansible:latest-tools ansible-tools "$@";
+    -v ${HOME}/.ssh/:/home/ansible/.ssh/:ro  -v $(pwd):/data eslutsky/ansible:latest-tools ansible-inventory "$@";
     }
 
 
+    function ansible-doc() {
+    docker run --rm \
+    -e USER=ansible \
+    -e MY_UID=$(id -u) \
+    -e MY_GID=$(id -g) \
+    -v ${HOME}/.ssh/:/home/ansible/.ssh/:ro  -v $(pwd):/data eslutsky/ansible:latest-tools ansible-doc "$@";
+    }
+
+    # list the  vms from the list - by tag
+    ansible-inventory -i inventory.compute.gcp.yml --list
+
     ansible-playbook  -i ./terraform_gce_inv.py  rhv-on-gcp.yml
+
 
     ```
 
