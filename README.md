@@ -36,7 +36,7 @@
     -e USER=ansible \
     -e MY_UID=$(id -u) \
     -e MY_GID=$(id -g) \
-    -v ${HOME}/.ssh/:/home/ansible/.ssh/:ro  -v $(pwd):/data  cytopia/ansible:latest-tools ansible-playbook "$@";
+    -v ${HOME}/.ssh/:/home/ansible/.ssh/:ro  -v $(pwd):/data eslutsky/ansible:latest-toolsansible-playbook "$@";
     }
 
     function ansible() {
@@ -44,9 +44,17 @@
     -e USER=ansible \
     -e MY_UID=$(id -u) \
     -e MY_GID=$(id -g) \
-    -v ${HOME}/.ssh/:/home/ansible/.ssh/:ro  -v $(pwd):/data  cytopia/ansible:latest-tools ansible "$@";
+    -v ${HOME}/.ssh/:/home/ansible/.ssh/:ro  -v $(pwd):/data eslutsky/ansible:latest-tools ansible "$@";
     }
 
+
+    function ansible-tools() {
+    docker run --rm \
+    -e USER=ansible \
+    -e MY_UID=$(id -u) \
+    -e MY_GID=$(id -g) \
+    -v ${HOME}/.ssh/:/home/ansible/.ssh/:ro  -v $(pwd):/data eslutsky/ansible:latest-tools ansible-tools "$@";
+    }
 
 
     ansible-playbook  -i ./terraform_gce_inv.py  rhv-on-gcp.yml
