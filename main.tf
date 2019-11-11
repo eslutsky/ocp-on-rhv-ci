@@ -65,6 +65,9 @@ network_interface {
     }
   }
 
+ labels = {
+      rhv_role = "rhv-engine"
+  }
  metadata = {
     ssh-keys =  "${var.gce-ssh-user}:${file(var.gce-ssh-pub-key-file)}"
   }
@@ -92,6 +95,66 @@ resource "google_compute_image" "host-nested-image" {
 }
 */
 
+resource "google_compute_instance_group_manager" "rhv_host_igm" {
+  provider = "google"
+  name = "ocp-rhv-nested-vm-host-igm"
+
+  base_instance_name = "ocp-rhv-nested-vm-host"
+  #zone               = "us-central1-a"
+
+  target_size  = 2
+  instance_template  = "${google_compute_instance_template.rhv_host_template.self_link}"
+
+
+  version {
+    name = "rhv-host"
+    instance_template  = "${google_compute_instance_template.rhv_host_template.self_link}"
+     target_size {
+      fixed = 2
+    }
+  }
+
+}
+
+
+resource "google_compute_instance_template" "rhv_host_template" {
+  name        = "rhv-host-template"
+  description = "This template is used to create rhv Host instances."
+
+  tags = ["rhv-host"]
+
+  labels = {
+    rhv_role = "rhv-host-igm"
+  }
+
+  instance_description = "rhv host"
+  machine_type         = "custom-${var.rhv-host-vcpu}-${var.rhv-host-memory}"
+  can_ip_forward       = true
+
+  scheduling {
+    automatic_restart   = false
+    on_host_maintenance = "MIGRATE"
+  }
+
+  // Create a new boot disk from an image
+  disk {
+    source_image = "gzaidman-nested-vm-image-1"
+    auto_delete  = true
+    boot         = true
+  }
+
+
+
+  network_interface {
+    network       = "${google_compute_network.rhv-network.self_link}"
+    subnetwork = "${google_compute_subnetwork.rhv-subnetwork.self_link}"
+    access_config {
+    }
+  }
+
+}
+
+
 resource "google_compute_instance" "host-instance" {
   name         = "${var.rhv-host-name}"
   machine_type = "custom-${var.rhv-host-vcpu}-${var.rhv-host-memory}"
@@ -107,6 +170,9 @@ resource "google_compute_instance" "host-instance" {
     subnetwork = "${google_compute_subnetwork.rhv-subnetwork.self_link}"
     access_config {
     }
+  }
+  labels = {
+      rhv_role = "rhv-host"
   }
 
   metadata = {
