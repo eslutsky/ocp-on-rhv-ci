@@ -11,6 +11,12 @@ variable "rhv-engine-name" {
     default = "ocp-rhv-vm-engine"
 }
 
+variable "rhv_host_count" {
+    type = number
+    description = "Number of host instances to launch"
+    default = 2
+}
+
 variable "rhv-engine-vcpu" {
     type = number
     description = "virtual cpu count"
@@ -49,7 +55,7 @@ variable "rhv-host-disk-size" {
 }
 variable "rhv-host-name" {
     type = "string"
-    description = "rhv host VM instance name"
+    description = "rhv first host VM instance name"
     default = "ocp-rhv-nested-vm-host"
 }
 

@@ -102,7 +102,7 @@ resource "google_compute_instance_group_manager" "rhv_host_igm" {
   base_instance_name = "ocp-rhv-nested-vm-host"
   #zone               = "us-central1-a"
 
-  target_size  = 2
+  target_size = "${var.rhv_host_count}"
   instance_template  = "${google_compute_instance_template.rhv_host_template.self_link}"
 
 
@@ -110,7 +110,7 @@ resource "google_compute_instance_group_manager" "rhv_host_igm" {
     name = "rhv-host"
     instance_template  = "${google_compute_instance_template.rhv_host_template.self_link}"
      target_size {
-      fixed = 2
+      fixed = "${var.rhv_host_count}"
     }
   }
 
@@ -152,6 +152,9 @@ resource "google_compute_instance_template" "rhv_host_template" {
     }
   }
 
+   metadata = {
+    ssh-keys =  "${var.gce-ssh-user}:${file(var.gce-ssh-pub-key-file)}"
+  }
 }
 
 

@@ -1,0 +1,38 @@
+---
+  - name: add host to engine
+    hosts: localhost
+    connection: local
+#    become: yes
+    pre_tasks:
+      - name: Login to RHV
+        ovirt_auth:
+          url: "https://localhost/ovirt-engine/api"
+          username: "admin@internal"
+          password: "123456"
+          ca_file: "/etc/pki/ovirt-engine/ca.pem"
+          insecure: "true"
+        tags:
+          - always
+    vars:
+      data_center_name: Default
+      cluster_name: Default
+      cluster_description: Default Cluster
+      root_password: 123456
+      hostname: {{hostname}}
+{% raw %}
+    tasks:
+      - name: Add Host ocp-rhv-nested-vm-host to the Cluster
+        ovirt_host:
+          auth: "{{ ovirt_auth }}"
+          cluster: "{{ cluster_name }}"
+          state: present
+          name: "{{hostname}}"
+          address: "{{hostname}}"
+          password: "{{ root_password }}"
+
+    post_tasks:
+      - name: Logout from RHV
+        ovirt_auth:
+          state: absent
+          ovirt_auth: "{{ ovirt_auth }}"
+{% endraw %}

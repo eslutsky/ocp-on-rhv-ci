@@ -1,7 +1,10 @@
 ---
-  - name: Playbook
-    hosts: _rhv_engine,_rhv_host
+  - name: prepare the extra hosts
+    hosts: _rhv_host_igm
     become: yes
+    vars:
+      pwd_alias: "123456"
+
     tasks:
       - name: ensure ovirt-release is at the latest version
         yum:
@@ -13,42 +16,6 @@
           name: '*'
           state: latest
 
-  - name: engine install
-    hosts: _rhv_engine
-    become: yes
-
-    tasks:
-      - name: install engine package
-        yum:
-          name:  ovirt-engine
-          state: latest
-
-      - name: create silent config file for engine installation
-        template:
-          src: engine-answer.j2
-          dest: /tmp/answer-file2
-
-      - name: Async running engine-setup
-        command: engine-setup --config-append=/tmp/answer-file2 --accept-defaults
-        async: 1800
-        poll: 0
-        register: async_results
-
-      - name: 'waiting for engine-setup to finish'
-        async_status:
-          jid: "{{ async_results.ansible_job_id }}"
-        register: job_result
-        until: job_result.finished
-        retries: 100
-        delay: 10
-
-  - name: configure ssh password
-    hosts: _rhv_host
-    become: yes
-    vars:
-      pwd_alias: "123456"
-
-    tasks:
       - name: set fact pwd_alias
         set_fact:
           root_pass: "{{ pwd_alias }}"
@@ -71,53 +38,18 @@
           name: sshd
           state: restarted
 
-
-  - name: configure nfs storage
-    hosts: _rhv_host
-    become: yes
-    tasks:
-      - name: install nfs-utils
-        yum:
-          state: latest
-          name: nfs-utils
-
-      - name: create shared folder for NFS
-        file:
-          path: /home/shared
-          state: directory
-          owner: 36
-          group: 107
-
-      - name: create /etc/exports
-        copy:
-          dest: /etc/exports
-          content: |
-            /home/shared *(rw)
-
-      - name: start nfs-server
-        service:
-          name: nfs-server
-          enabled: yes
-          state: started
-
-  - name: add first host to engine
+  - name: add additional host to engine
     hosts: _rhv_engine
     become: yes
+    gather_facts: no
 
     tasks:
-      - name: create silent config file for engine installation
-        template:
-          src: add-host-to-engine.yml.j2
-          dest: /root/add-host-to-engine.yml
-
-      - name: adding new host to the engine
-        command: ansible-playbook /root/add-host-to-engine.yml
-        register: stdout
-
-      - debug: msg="{{stdout}}"
+    - name: create silent config file for engine installation
+      include: subtasks/add_host_to_engine.yml host={{item}}
+      with_items: "{{groups._rhv_host_igm}}"
 
   - name: configure  networking for nested VMs
-    hosts: _rhv_host
+    hosts: _rhv_host_igm
     become: yes
     tasks:
       - name: create directory for dnsmasq
@@ -205,38 +137,3 @@
           - vdsm
       - name: firewalld reload
         command: firewall-cmd --reload
-
-      - name: sleeping 120
-        pause:
-          seconds: 120
-
-
-  - name: create rchos tempate
-    hosts: _rhv_engine
-    become: yes
-
-    tasks:
-      - name: create yaml file for rhcos upload
-        template:
-          src: upload-rhcos-template.yml.j2
-          dest: /root/upload-rhcos-template.yml
-
-      - name: upload rhcos image + create template
-        command: ansible-playbook /root/upload-rhcos-template.yml
-        register: stdout
-
-
-  - name: create port forwarding rules for ocp services
-    hosts: _rhv_host
-    become: yes
-    tasks:
-      - name: create port forwarding rules for ocp vm services
-        firewalld:
-          rich_rule: rule  family=ipv4 forward-port port=6443 protocol=tcp to-port=6443 to-addr=192.168.200.30
-          zone: public
-          permanent: yes
-          immediate: yes
-          state: enabled
-
-
-

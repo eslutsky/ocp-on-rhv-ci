@@ -1,0 +1,17 @@
+- name: check if host {{hostvars[host].name}} is reachable from the engine
+  command: ping "{{hostvars[host].name}}" -c 1
+  register: ping_result
+
+- name: debug
+  debug: "msg={{ping_result.stdout}}"
+
+- name: create silent config file for engine installation
+  template:
+    src: add-host-to-engine-scale.yml.j2
+    dest: /root/add-host-to-engine.yml
+  vars:
+    hostname: "{{hostvars[host].name}}"
+
+- name: adding new host to the engine
+  command: ansible-playbook /root/add-host-to-engine.yml
+  register: stdout
