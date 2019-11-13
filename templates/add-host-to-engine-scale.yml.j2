@@ -15,12 +15,22 @@
           - always
     vars:
       data_center_name: Default
-      cluster_name: Default
-      cluster_description: Default Cluster
+      cluster_name: cluster-{{hostname}}
+      cluster_description: cluster-{{hostname}} Cluster
       root_password: 123456
       hostname: {{hostname}}
 {% raw %}
     tasks:
+      - name: create new cluster
+        ovirt_cluster:
+          auth: "{{ ovirt_auth }}"
+          name: "{{ cluster_name }}"
+          data_center: Default
+          description: "{{ cluster_description }}"
+          cpu_type: Intel Haswell-noTSX IBRS SSBD MDS Family
+          ksm: true
+          memory_policy: server
+
       - name: Add Host ocp-rhv-nested-vm-host to the Cluster
         ovirt_host:
           auth: "{{ ovirt_auth }}"
