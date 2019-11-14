@@ -45,9 +45,7 @@ resource "google_compute_firewall" "ocp-rhv-firewall-internal" {
   source_ranges = [ "10.0.0.0/24" ]
 }
 
-resource "google_compute_network" "default" {
-  name = "test-network"
-}
+
 resource "google_compute_instance" "engine-instance" {
   name         = "${var.rhv-engine-name}"
   machine_type = "custom-${var.rhv-engine-vcpu}-${var.rhv-engine-memory}"
@@ -61,8 +59,7 @@ network_interface {
     # A default network is created for all GCP projects
     network       = "${google_compute_network.rhv-network.self_link}"
     subnetwork = "${google_compute_subnetwork.rhv-subnetwork.self_link}"
-    access_config {
-    }
+    network_ip = "10.0.0.10"
   }
 
  labels = {
@@ -104,7 +101,7 @@ resource "google_compute_instance_group_manager" "rhv_host_igm" {
 
   target_size = "${var.rhv_host_count}"
   instance_template  = "${google_compute_instance_template.rhv_host_template.self_link}"
-
+  wait_for_instances = true
 
   version {
     name = "rhv-host"
@@ -148,9 +145,7 @@ resource "google_compute_instance_template" "rhv_host_template" {
   network_interface {
     network       = "${google_compute_network.rhv-network.self_link}"
     subnetwork = "${google_compute_subnetwork.rhv-subnetwork.self_link}"
-    access_config {
-    }
-  }
+ }
 
    metadata = {
     ssh-keys =  "${var.gce-ssh-user}:${file(var.gce-ssh-pub-key-file)}"
@@ -171,8 +166,7 @@ resource "google_compute_instance" "host-instance" {
     # A default network is created for all GCP projects
     network       = "${google_compute_network.rhv-network.self_link}"
     subnetwork = "${google_compute_subnetwork.rhv-subnetwork.self_link}"
-    access_config {
-    }
+    network_ip = "10.0.0.11"
   }
   labels = {
       rhv_role = "rhv-host"
