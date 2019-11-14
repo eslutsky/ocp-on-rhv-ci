@@ -42,6 +42,11 @@ resource "google_compute_firewall" "ocp-rhv-firewall-internal" {
     #ports    = ["6443", "443", "80"]
   }
 
+  allow {
+    protocol = "udp"
+    #ports    = ["6443", "443", "80"]
+  }
+
   source_ranges = [ "10.0.0.0/24" ]
 }
 
