@@ -15,6 +15,7 @@
   source env.sh
   terraform init
   terraform apply
+  ./assign-access-ips.sh
   ansible-playbook -u centos -i inventory.compute.gcp.yml  rhv-on-gcp.yml
 
   ```
@@ -23,7 +24,8 @@
 
   ```shell
   source env.sh
-  rhv_host_count=5 terraform apply
+  rhv_host_count=4 terraform apply
+  ./assign-access-ips.sh
   ansible-playbook -u centos -i inventory.compute.gcp.yml rhv-on-gcp-scale.yml
   ```
 
