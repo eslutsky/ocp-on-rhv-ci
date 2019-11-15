@@ -31,6 +31,12 @@
 
 ---
 
+## files
+
+assign-access-ips.sh | script that allocated unused static IPs to the VMS
+
+
+
 ### TODO
 
 - [X] check engine version to support  correct ignition params.
