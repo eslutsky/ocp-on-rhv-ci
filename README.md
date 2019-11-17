@@ -33,12 +33,8 @@
 
 ## files
 
-assign-access-ips.sh | script that allocated unused static IPs to the VMS
+| File  | Description |
+|---|----|
+| assign-access-ips.sh  | script that allocated static public IPs to the VMS   |
+| ip_hosts.csv |  csv mapping files between cluster FQDN and public static IP address  |
 
-
-
-### TODO
-
-- [X] check engine version to support  correct ignition params.
-- [ ] add dns static reservation
-- [ ] add check lookup reservation
