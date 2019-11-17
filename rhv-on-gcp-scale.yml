@@ -137,3 +137,7 @@
           - vdsm
       - name: firewalld reload
         command: firewall-cmd --reload
+
+      - name: gathering info from rhv cluster
+        include: subtasks/gather_env_info.yml host={{item}}
+        with_items: "{{groups._rhv_host_igm}}"

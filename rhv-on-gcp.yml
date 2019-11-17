@@ -244,6 +244,9 @@
           line: "10.0.0.10 engine.ocp-on-ovirt.gcp.devcluster.openshift.com"
           state: present
 
+      - name: gathering info from rhv cluster
+        include: subtasks/gather_env_info.yml host={{item}}
+        with_items: "{{groups._rhv_host}}"
 
   - name: create port forwarding rules for ocp services
     hosts: _rhv_host

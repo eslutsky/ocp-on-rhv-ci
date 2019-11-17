@@ -1,0 +1,29 @@
+- name: Default cluster name
+  set_fact:
+    cluster_name: "Default"
+
+- name: use cluster naming convention for IGM
+  set_fact:
+    cluster_name: "cluster-{{hostvars[host].name}}"
+  when: "'_rhv_host_igm' in group_names"
+
+- name: create silent config file for ovirt gather
+  template:
+    src: gather-ovirt-info.yml.j2
+    dest: /root/gather-ovirt-info.yml
+  vars:
+    hostname: "{{hostvars[host].name}}"
+    cluster_name: "{{cluster_name}}"
+    template_name: "rhcos-master"
+    cluster_fqdn: "{{ lookup('csvfile', host + ' file=ip_hosts.csv delimiter=,') }}"
+    result_json_path: "/tmp/{{cluster_name}}"
+
+- name: running playbook on engine
+  command: ansible-playbook /root/gather-ovirt-info.yml
+  register: ansible_output
+
+- name: collect cluster info json files from  the engine
+  fetch:
+    src: "/tmp/{{cluster_name}}"
+    dest: "res/{{cluster_name}}.json"
+    flat: yes
