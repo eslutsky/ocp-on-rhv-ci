@@ -9,3 +9,4 @@
 *.tfvars
 ocp-on-rhv-service.json
 mygcloud
+res

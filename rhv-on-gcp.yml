@@ -42,20 +42,6 @@
         retries: 100
         delay: 10
 
-      - name: rename engine to match public fqdn
-        command: |
-          /usr/share/ovirt-engine/setup/bin/ovirt-engine-rename \
-          --newname=engine.ocp-on-ovirt.gcp.devcluster.openshift.com \
-          --otopi-environment="OSETUP_RENAME/forceIgnoreAIAInCA=bool:'True' \
-          OVESETUP_CORE/engineStop=bool:'True' \
-          OSETUP_RENAME/confirmForceOverwrite=bool:'False'"
-
-      - name: add new fqdn to /etc/hosts
-        lineinfile:
-          dest: /etc/hosts
-          regexp: "engine.ocp-on-ovirt.gcp.devcluster.openshift.com"
-          line: "10.0.0.10 engine.ocp-on-ovirt.gcp.devcluster.openshift.com"
-          state: present
       - pause:
   - name: configure ssh password
     hosts: _rhv_host
@@ -242,6 +228,21 @@
       - name: upload rhcos image + create template
         command: ansible-playbook /root/upload-rhcos-template.yml
         register: stdout
+
+      - name: rename engine to match public fqdn
+        command: |
+          /usr/share/ovirt-engine/setup/bin/ovirt-engine-rename \
+          --newname=engine.ocp-on-ovirt.gcp.devcluster.openshift.com \
+          --otopi-environment="OSETUP_RENAME/forceIgnoreAIAInCA=bool:'True' \
+          OVESETUP_CORE/engineStop=bool:'True' \
+          OSETUP_RENAME/confirmForceOverwrite=bool:'False'"
+
+      - name: add new fqdn to /etc/hosts
+        lineinfile:
+          dest: /etc/hosts
+          regexp: "engine.ocp-on-ovirt.gcp.devcluster.openshift.com"
+          line: "10.0.0.10 engine.ocp-on-ovirt.gcp.devcluster.openshift.com"
+          state: present
 
 
   - name: create port forwarding rules for ocp services
