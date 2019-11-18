@@ -29,6 +29,13 @@
   ansible-playbook -u centos -i inventory.compute.gcp.yml rhv-on-gcp-scale.yml
   ```
 
+## copy  ovirt cluster json  to the openshift CI secret
+
+   ```shell
+   oc login ..
+   oc create secret generic  ovirt-infra-secrets --from-file=res/ --dry-run -o yaml | oc replace -f -
+   ```
+
 ---
 
 ## files
