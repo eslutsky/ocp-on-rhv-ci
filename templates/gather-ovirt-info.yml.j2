@@ -36,6 +36,7 @@
       - set_fact: template_id="{{ result['ovirt_templates'][0]['id'] }}"
       - set_fact: cluster_fqdn="{{ cluster_fqdn }}"
       - set_fact: cluster_base="{{ cluster_fqdn.split('.')[1:] | join('.') }}"
+      - set_fact: cluster_name="ovirt-{{ cluster_fqdn.split('.')[1].split('-')[-1] }}"
 
 
       - copy:
