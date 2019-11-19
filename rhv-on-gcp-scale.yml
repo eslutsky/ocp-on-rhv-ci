@@ -48,6 +48,10 @@
       include: subtasks/add_host_to_engine.yml host={{item}}
       with_items: "{{groups._rhv_host_igm}}"
 
+    - name: gathering info from rhv cluster
+      include: subtasks/gather_env_info.yml host={{item}}
+      with_items: "{{groups._rhv_host_igm}}"
+
   - name: configure  networking for nested VMs
     hosts: _rhv_host_igm
     become: yes
@@ -137,7 +141,3 @@
           - vdsm
       - name: firewalld reload
         command: firewall-cmd --reload
-
-      - name: gathering info from rhv cluster
-        include: subtasks/gather_env_info.yml host={{item}}
-        with_items: "{{groups._rhv_host_igm}}"

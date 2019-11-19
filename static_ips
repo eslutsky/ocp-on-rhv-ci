@@ -1,0 +1,159 @@
+gcloud compute addresses create ocp-rhv-static-ip-engine --region us-central1
+gcloud compute addresses create ocp-rhv-static-ip-host-00 --region us-central1
+gcloud compute addresses create ocp-rhv-static-ip-host-01 --region us-central1
+gcloud compute addresses create ocp-rhv-static-ip-host-02 --region us-central1
+gcloud compute addresses create ocp-rhv-static-ip-host-03 --region us-central1
+gcloud compute addresses create ocp-rhv-static-ip-host-04 --region us-central1
+gcloud compute addresses create ocp-rhv-static-ip-host-05 --region us-central1
+gcloud compute addresses create ocp-rhv-static-ip-host-06 --region us-central1
+gcloud compute addresses create ocp-rhv-static-ip-host-07 --region us-central1
+gcloud compute addresses create ocp-rhv-static-ip-host-08 --region us-central1
+gcloud compute addresses create ocp-rhv-static-ip-host-09 --region us-central1
+gcloud compute addresses create ocp-rhv-static-ip-host-10 --region us-central1
+
+
+gcloud compute addresses list | grep ocp-rhv-static-ip                                                                                                                14:55:45
+ocp-rhv-static-ip-engine                35.223.152.105   EXTERNAL                         us-central1                              RESERVED
+ocp-rhv-static-ip-host-00               34.67.196.103    EXTERNAL                         us-central1                              RESERVED
+ocp-rhv-static-ip-host-01               35.232.120.161   EXTERNAL                         us-central1                              RESERVED
+ocp-rhv-static-ip-host-02               35.238.23.46     EXTERNAL                         us-central1                              RESERVED
+ocp-rhv-static-ip-host-03               35.239.212.153   EXTERNAL                         us-central1                              RESERVED
+ocp-rhv-static-ip-host-04               35.223.117.18    EXTERNAL                         us-central1                              RESERVED
+ocp-rhv-static-ip-host-05               104.197.211.67   EXTERNAL                         us-central1                              RESERVED
+ocp-rhv-static-ip-host-06               35.188.80.5      EXTERNAL                         us-central1                              RESERVED
+ocp-rhv-static-ip-host-07               35.238.219.16    EXTERNAL                         us-central1                              RESERVED
+ocp-rhv-static-ip-host-08               35.226.234.198   EXTERNAL                         us-central1                              RESERVED
+ocp-rhv-static-ip-host-09               35.192.178.189   EXTERNAL                         us-central1                              RESERVED
+ocp-rhv-static-ip-host-10               35.225.156.140   EXTERNAL                         us-central1                              RESERVED
+
+cat<<__EOF__ >hosts
+ocp-rhv-static-ip-engine,35.223.152.105,engine.ocp-on-ovirt.gcp.devcluster.openshift.com
+ocp-rhv-static-ip-host-00,34.67.196.103,api-00.ocp-on-ovirt.gcp.devcluster.openshift.com
+ocp-rhv-static-ip-host-01,35.232.120.161,api-01.ocp-on-ovirt.gcp.devcluster.openshift.com
+ocp-rhv-static-ip-host-02,35.238.23.46,api-02.ocp-on-ovirt.gcp.devcluster.openshift.com
+ocp-rhv-static-ip-host-03,35.239.212.153,api-03.ocp-on-ovirt.gcp.devcluster.openshift.com
+ocp-rhv-static-ip-host-04,35.223.117.18,api-04.ocp-on-ovirt.gcp.devcluster.openshift.com
+ocp-rhv-static-ip-host-05,104.197.211.67,api-05.ocp-on-ovirt.gcp.devcluster.openshift.com
+ocp-rhv-static-ip-host-06,35.188.80.5,api-06.ocp-on-ovirt.gcp.devcluster.openshift.com
+ocp-rhv-static-ip-host-07,35.238.219.16,api-07.ocp-on-ovirt.gcp.devcluster.openshift.com
+ocp-rhv-static-ip-host-08,35.226.234.198,api-08.ocp-on-ovirt.gcp.devcluster.openshift.com
+ocp-rhv-static-ip-host-09,35.192.178.189,api-09.ocp-on-ovirt.gcp.devcluster.openshift.com
+ocp-rhv-static-ip-host-10,35.225.156.140,api-10.ocp-on-ovirt.gcp.devcluster.openshift.com
+__EOF__
+
+echo "gcloud dns record-sets transaction start --zone=\"devcluster\""
+cat<<__EOF__ >hosts
+ocp-rhv-static-ip-engine,35.223.152.105
+ocp-rhv-static-ip-host-00,34.67.196.103
+ocp-rhv-static-ip-host-01,35.232.120.161
+ocp-rhv-static-ip-host-02,35.238.23.46
+ocp-rhv-static-ip-host-03,35.239.212.153
+ocp-rhv-static-ip-host-04,35.223.117.18
+ocp-rhv-static-ip-host-05,104.197.211.67
+ocp-rhv-static-ip-host-06,35.188.80.5
+ocp-rhv-static-ip-host-07,35.238.219.16
+ocp-rhv-static-ip-host-08,35.226.234.198
+ocp-rhv-static-ip-host-09,35.192.178.189
+ocp-rhv-static-ip-host-10,35.225.156.140
+__EOF__
+
+
+while IFS=, read -r host ip
+do
+if [ "${host##*-}" = "engine" ];then
+    echo "$ip,engine.ocp-on-ovirt.gcp.devcluster.openshift.com" >>ip_hosts.csv
+
+#    echo "gcloud dns record-sets transaction add $ip --name=\"engine.ocp-on-ovirt.gcp.devcluster.openshift.com\" \
+#  --ttl=\"1\" \
+#  --type=\"A\" \
+#  --zone=\"devcluster\""
+else
+    echo "$ip,api.ocp-on-ovirt-${host##*-}.gcp.devcluster.openshift.com" >>ip_hosts.csv
+
+    #echo "gcloud dns record-sets transaction add $ip --name=\"api.ocp-on-ovirt-${host##*-}.gcp.devcluster.openshift.com\" \
+  #--ttl=\"1\" \
+  #--type=\"A\" \
+  #--zone=\"devcluster\""
+fi
+done < hosts
+
+echo "gcloud dns record-sets transaction execute --zone=\"devcluster\""
+
+verify
+gcloud dns record-sets list --zone=devcluster
+
+api-00.ocp-on-ovirt.gcp.devcluster.openshift.com.      A     1      34.67.196.103
+api-01.ocp-on-ovirt.gcp.devcluster.openshift.com.      A     1      35.232.120.161
+api-02.ocp-on-ovirt.gcp.devcluster.openshift.com.      A     1      35.238.23.46
+api-03.ocp-on-ovirt.gcp.devcluster.openshift.com.      A     1      35.239.212.153
+api-04.ocp-on-ovirt.gcp.devcluster.openshift.com.      A     1      35.223.117.18
+api-05.ocp-on-ovirt.gcp.devcluster.openshift.com.      A     1      104.197.211.67
+api-06.ocp-on-ovirt.gcp.devcluster.openshift.com.      A     1      35.188.80.5
+api-07.ocp-on-ovirt.gcp.devcluster.openshift.com.      A     1      35.238.219.16
+api-08.ocp-on-ovirt.gcp.devcluster.openshift.com.      A     1      35.226.234.198
+api-09.ocp-on-ovirt.gcp.devcluster.openshift.com.      A     1      35.192.178.189
+api-10.ocp-on-ovirt.gcp.devcluster.openshift.com.      A     1      35.225.156.140
+engine.ocp-on-ovirt.gcp.devcluster.openshift.com.      A     1      35.223.152.105
+
+
+#assign instance with external IP
+gcloud compute instances add-access-config ocp-rhv-nested-vm-host-2fcv --address 35.232.120.161
+gcloud compute instances delete-access-config ocp-rhv-nested-vm-host-2fcv --address 35.232.120.161
+
+docker run gcr.io/google.com/cloudsdktool/cloud-sdk:latest gcloud version
+
+#list the instances with out external IP
+gcloud compute instance-groups managed  list-instances  ocp-rhv-nested-vm-host-igm --zone=us-central1-b --format='value(instance)'
+
+gcloud compute instances describe ocp-rhv-nested-vm-host-2fcv  --format='value(networkInterfaces.accessConfigs.natIP)'
+
+
+#assign each instance with static ip
+questions?
+- how do i which is address is unassigned
+
+# list free IPs that are dedicated for rhev hosts
+gcloud compute addresses list --filter="name~'ocp-rhv-static-ip-host-[0-9][1-9]' AND status:RESERVED" --format='value(ADDRESS)'
+
+free_ip=$(gcloud compute addresses list --filter="name~'ocp-rhv-static-ip-host-[0-9][1-9]' \
+AND status:RESERVED" \
+--format='value(ADDRESS)' | head -1)
+
+
+## assigned public  static ip to engine (if missing)
+if $(get_vms_without_public_ips  'ocp-rhv-vm-engine')
+then
+  if $(get_free_public_ip '.*static-ip-engine')
+  then
+    echo "assigning public ip - ${free_ip} to ${vms[1]} VM"
+    gcloud compute instances add-access-config ${vms[1]} --address ${free_ip} --zone us-central1-b
+  fi
+fi
+
+
+## assigned public  static ip to first host (if missing)
+if $(get_vms_without_public_ips  '^ocp-rhv-nested-vm-host$')
+then
+  if $(get_free_public_ip 'ocp-rhv-static-ip-host-00')
+  then
+    echo "assigning public ip - ${free_ip} to ${vms[1]} VM"
+    gcloud compute instances add-access-config ${vms[1]} --address ${free_ip} --zone us-central1-b
+  fi
+fi
+
+
+
+declare -a  vms
+if $(get_vms_without_public_ips  '^ocp-rhv-nested-vm-host-.*')
+then
+  #echo "got VMs ${vms}"
+  for element in "${vms[@]}"
+  do
+      sleep 2
+      if $(get_free_public_ip 'ocp-rhv-static-ip-host-[0-9][1-9]')
+      then
+          echo "assigning public ip - ${free_ip} to $element VM"
+          gcloud compute instances add-access-config $element --address ${free_ip} --zone us-central1-b
+      fi
+  done
+fi
