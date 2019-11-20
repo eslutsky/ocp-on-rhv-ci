@@ -110,11 +110,7 @@ resource "google_compute_instance_group_manager" "rhv_host_igm" {
   version {
     name = "rhv-host"
     instance_template  = "${google_compute_instance_template.rhv_host_template.self_link}"
-     target_size {
-      fixed = "${var.rhv_host_count}"
-    }
   }
-
 }
 
 
