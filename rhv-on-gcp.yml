@@ -117,11 +117,6 @@
 
       - debug: msg="{{stdout}}"
 
-      - name: gathering info from rhv cluster
-        include: subtasks/gather_env_info.yml host={{item}}
-        with_items: "{{groups._rhv_host}}"
-
-
   - name: configure  networking for nested VMs
     hosts: _rhv_host
     become: yes
