@@ -17,7 +17,7 @@ then
   if [ $? -eq 0 ] ;
   then
     echo "assigning public ip - ${free_ip} to ${vms} VM"
-    gcloud compute instances add-access-config ${vms} --address ${free_ip} --zone us-central1-b
+    gcloud compute instances add-access-config ${vms} --address ${free_ip} --zone us-central1-c
   fi
 fi
 
@@ -29,7 +29,7 @@ then
   if [ $? -eq 0 ] ;
   then
     echo "assigning public ip - ${free_ip} to ${vms} VM"
-    gcloud compute instances add-access-config ${vms} --address ${free_ip} --zone us-central1-b
+    gcloud compute instances add-access-config ${vms} --address ${free_ip} --zone us-central1-c
   fi
 fi
 
@@ -43,7 +43,7 @@ then
       if [ $? -eq 0 ] ;
       then
           echo "assigning public ip - ${free_ip} to $element VM"
-          gcloud compute instances add-access-config $element --address ${free_ip} --zone us-central1-b
+          gcloud compute instances add-access-config $element --address ${free_ip} --zone us-central1-c
       fi
   done
 fi
