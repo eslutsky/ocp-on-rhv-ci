@@ -1,5 +1,10 @@
 #!/bin/bash
+
+if [ -z $KUBERNETES_PORT ] ; then
 source env.sh
+fi
+source gcloud_utils.sh
+
 
 free_ip=""
 
