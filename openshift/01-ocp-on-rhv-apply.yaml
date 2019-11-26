@@ -1,0 +1,58 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: terraform
+  labels:
+    jobgroup: terraform
+spec:
+  template:
+    metadata:
+      name: terraform
+      labels:
+        jobgroup: terraform
+    spec:
+      containers:
+      - name: terraform
+        image: contino/terraform
+        #image: registry.svc.ci.openshift.org/ci/boskoscli
+        env:
+          - name: TF_VAR_rhv_host_count
+            value: '1'
+          - name: GOOGLE_CLOUD_KEYFILE_JSON
+            value: '/home/terraform/gcp-secrets/ocp-on-rhv-service.json'
+          - name: TF_VAR_gce-ssh-pub-key-file
+            value: '/home/terraform/gcp-secrets/id_rsa.pub'
+        #command: ["/bin/bash"]
+        #args: ["-c","sleep 100000"]
+        #args: ["apply","-auto-approve","ocp-on-rhv-ci"]
+        command:
+        - /bin/bash
+        - -c
+        - |
+          #!/bin/bash
+          set -euo pipefail
+
+          terraform init  ocp-on-rhv-ci
+          terraform apply -auto-approve ocp-on-rhv-ci
+          #terraform destroy -auto-approve ocp-on-rhv-ci
+
+        volumeMounts:
+        - name: config-gcp-secrets
+          mountPath: /home/terraform/gcp-secrets
+        - name: config-volume-ws
+          mountPath: /opt/app
+        - name: config-map-setup
+          mountPath: /home/terraform/gcp-setup
+      volumes:
+        - name: config-gcp-secrets
+          secret:
+            secretName: ovirt-infra-gcp-secrets
+        - name: config-map-setup
+          configMap:
+            name: ovirt-infra-gcp-setup
+            defaultMode: 0777
+        - name: config-volume-ws
+          persistentVolumeClaim:
+            claimName: ovirt-infra-gcp-ws
+
+      restartPolicy: Never

@@ -1,0 +1,65 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: gcloud
+  labels:
+    jobgroup: gcloud
+spec:
+  template:
+    metadata:
+      name: gcloud
+      labels:
+        jobgroup: gcloud
+    spec:
+      containers:
+      - name: gcloud
+        image: gcr.io/google.com/cloudsdktool/cloud-sdk:alpine
+        env:
+          - name: CLOUDSDK_CORE_PROJECT
+            value: 'openshift-gce-devel'
+          - name: CLOUDSDK_CONFIG
+            value: '/opt/app/mygcloud'
+        #command: ["/bin/bash"]
+        #args: ["-c","sleep 100000"]
+        #args: ["apply","-auto-approve","ocp-on-rhv-ci"]
+        command:
+        - /bin/bash
+        - -c
+        - |
+          #!/bin/bash
+          set -euo pipefail
+          gcloud_config=/opt/app/mygcloud/configurations
+          if [ ! -d ${gcloud_config} ] ; then
+            mkdir -p ${gcloud_config}
+
+          cat <<_EOF_ >${gcloud_config}/config_default
+          [auth]
+          credential_file_override = /certs/ocp-on-rhv-service.json
+          _EOF_
+          fi
+
+
+          /opt/app/ocp-on-rhv-ci/assign-access-ips.sh
+
+
+
+        volumeMounts:
+        - name: config-gcp-secrets
+          mountPath: /certs
+        - name: config-volume-ws
+          mountPath: /opt/app
+        - name: config-map-gcloud
+          mountPath: /config/mygcloud
+      volumes:
+        - name: config-gcp-secrets
+          secret:
+            secretName: ovirt-infra-gcp-secrets
+        - name: config-map-gcloud
+          configMap:
+            name: ovirt-infra-gcp-gcloud
+
+        - name: config-volume-ws
+          persistentVolumeClaim:
+            claimName: ovirt-infra-gcp-ws
+
+      restartPolicy: Never

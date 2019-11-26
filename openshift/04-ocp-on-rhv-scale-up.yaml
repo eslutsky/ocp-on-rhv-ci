@@ -1,0 +1,37 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ocp-on-rhv-scale-up
+  labels:
+    jobgroup: ocp-on-rhv-scale-up
+spec:
+  template:
+    metadata:
+      name: ocp-on-rhv-scale-up
+      labels:
+        jobgroup: ansible-playbook
+    spec:
+      containers:
+      - name: ansible-runner
+        image: quay.io/eslutsky/ansible-runner
+        args: ["/runner/gcp-setup/setup.sh","rhv-on-gcp-scale.yml"]
+        volumeMounts:
+        - name: config-gcp-secrets
+          mountPath: /runner/gcp-secrets
+        - name: config-volume-ws
+          mountPath: /runner/gcp-ws
+        - name: config-map-setup
+          mountPath: /runner/gcp-setup
+      volumes:
+        - name: config-gcp-secrets
+          secret:
+            secretName: ovirt-infra-gcp-secrets
+        - name: config-map-setup
+          configMap:
+            name: ovirt-infra-gcp-setup
+            defaultMode: 0777
+        - name: config-volume-ws
+          persistentVolumeClaim:
+            claimName: ovirt-infra-gcp-ws
+
+      restartPolicy: Never
