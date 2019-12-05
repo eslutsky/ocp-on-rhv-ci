@@ -31,9 +31,11 @@ spec:
         - |
           #!/bin/bash
           set -euo pipefail
+          cd ocp-on-rhv-ci/
+          git pull
 
-          terraform init  ocp-on-rhv-ci
-          terraform apply -auto-approve ocp-on-rhv-ci
+          terraform init
+          terraform apply -auto-approve
           #terraform destroy -auto-approve ocp-on-rhv-ci
 
         volumeMounts:
