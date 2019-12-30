@@ -1,0 +1,68 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: schedule-build-ovirt-release-image
+spec:
+  schedule: "0 7 * * *"
+  concurrencyPolicy: "Replace"
+  startingDeadlineSeconds: 200
+  suspend: false
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  backoffLimit: 0
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          name: schedule-build-ovirt-release-image
+
+        spec:
+          backoffLimit: 0
+          containers:
+          - name: setup
+            #image: quay.io/rgolangh/openshift-installer@sha256:b06c67502f9d9abaffebe3cccc606815c6d26a3df0c306fed90b5c4267a9cfd1
+            image: 'registry.svc.ci.openshift.org/ovirt/openshift-tests:ovirt'
+            imagePullPolicy: IfNotPresent
+            terminationMessagePolicy: FallbackToLogsOnError
+            volumeMounts:
+            - name: shared-tmp
+              mountPath: /tmp
+            - name: cluster-profile
+              mountPath: /etc/openshift-installer
+
+            command:
+            - /bin/sh
+            - -c
+            - |
+              #!/bin/sh
+
+              mkdir -p /tmp/artifacts
+              cd /tmp/artifacts
+              MAO=quay.io/rgolangh/machine-api-operator:latest
+              MCO=quay.io/rgolangh/machine-config-operator:latest
+              OMC=quay.io/rgolangh/origin-ovirt-machine-controllers:latest
+              CCO=quay.io/rgolangh/cloud-credential-operator:latest
+              INSTALLER=quay.io/rgolangh/openshift-installer:latest
+              RELEASE=registry.svc.ci.openshift.org/ocp/release:4.4-ci
+
+
+              oc adm release new    \
+              --registry-config=/etc/openshift-installer/pull-secret \
+              --from-release ${RELEASE} \
+              machine-api-operator=${MAO} \
+              machine-config-operator=${MCO} \
+              ovirt-machine-controllers=${OMC} \
+              cloud-credential-operator=${CCO} \
+              installer=${INSTALLER} \
+              --to-image registry.svc.ci.openshift.org/ovirt/ovirt-release:latest "$@"
+
+          volumes:
+            - name: shared-tmp
+              emptyDir: {}
+            - name: artifacts
+              emptyDir: {}
+            - name: cluster-profile
+              secret:
+                secretName: cluster-secrets-ovirt
+
+          restartPolicy: Never
