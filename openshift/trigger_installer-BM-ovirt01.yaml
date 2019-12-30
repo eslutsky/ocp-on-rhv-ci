@@ -1,0 +1,170 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: openshift-installer-bm-01-ovirt01
+  labels:
+    jobgroup: openshift-installer-bm-ovirt01
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      name: openshift-installer-bm-ovirt01
+      labels:
+        jobgroup: openshift-installer-bm-ovirt01
+    spec:
+      backoffLimit: 0
+      containers:
+      - name: setup
+        #image: quay.io/rgolangh/openshift-installer@sha256:b06c67502f9d9abaffebe3cccc606815c6d26a3df0c306fed90b5c4267a9cfd1
+        image: quay.io/rgolangh/openshift-installer:latest
+        terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - name: shared-tmp
+          mountPath: /tmp
+        - name: cluster-profile
+          mountPath: /etc/openshift-installer
+        - name: installer-artifacts
+          mountPath: /tmp/artifacts
+        env:
+        - name: SSH_PUB_KEY_PATH
+          value: /etc/openshift-installer/ssh-publickey
+        - name: PULL_SECRET_PATH
+          value: /etc/openshift-installer/pull-secret
+        - name: USER
+          value: test
+        - name: HOME
+          value: /tmp
+        - name: OVIRT_CLUSTER_NAME_P
+          value: "ovirt01"
+
+        command:
+        - /bin/sh
+        - -c
+        - |
+          #!/bin/sh
+          trap 'rc=$?; if test "${rc}" -eq 0; then touch /tmp/setup-success; else touch /tmp/exit; fi; exit "${rc}"' EXIT
+          trap 'CHILDREN=$(jobs -p); if test -n "${CHILDREN}"; then kill ${CHILDREN} && wait; fi' TERM
+          cp "$(command -v openshift-install)" /tmp
+          rm -rf /tmp/artifacts/*
+          mkdir /tmp/artifacts/installer
+
+          export EXPIRATION_DATE=$(date -d '4 hours' --iso=minutes --utc)
+          export SSH_PUB_KEY=$(cat "${SSH_PUB_KEY_PATH}")
+          export PULL_SECRET=$(cat "${PULL_SECRET_PATH}")
+
+          cat <<__EOF__ > /tmp/ovirt.conf
+          BASE_DOMAIN=gcp.devcluster.openshift.com
+          OVIRT_ENGINE_CLUSTER_ID=fb947329-656b-4659-a128-82b971cd22ab
+          OVIRT_ENGINE_TEMPLATE_ID=e3bbbc51-93a0-496d-bf15-27e24feffcf7
+          OVIRT_ENGINE_STORAGE_DOMAIN_ID=c7211b5e-e0d6-4f1e-85eb-a79a0ce9ec0d
+          OVIRT_ENGINE_TEMPLATE_NAME=rhcos-master-green-30g
+          OVIRT_APIVIP=192.168.200.30
+          #OVIRT_APIVIP=192.168.200.160
+          OVIRT_DNSVIP=192.168.200.31
+          #OVIRT_DNSVIP=192.168.200.161
+          OVIRT_INGRESSVIP=192.168.200.32
+          #OVIRT_INGRESSVIP=192.168.200.162
+          __EOF__
+
+          export TF_VAR_ovirt_template_cpu=8
+          export TF_VAR_ovirt_master_mem=16384
+          export TF_VAR_ovirt_master_cpu=8
+
+
+          source /etc/openshift-installer/ovirt.conf
+
+          #update the IDs for new cluster
+          source /tmp/ovirt.conf
+
+          #export OVIRT_CONFIG=/tmp/ovirt.conf
+          export OPENSHIFT_INSTALL_OS_IMAGE_OVERRIDE=${OVIRT_ENGINE_TEMPLATE_NAME}
+
+          # We want the setup to download the latest CA from the engine
+          # Therefor living it empty
+          export OVIRT_CONFIG=/tmp/artifacts/installer/ovirt-config.yaml
+          cat > /tmp/artifacts/installer/ovirt-config.yaml <<EOF
+          ovirt_url: ${OVIRT_ENGINE_URL}
+          ovirt_username: ${OVIRT_ENGINE_USERNAME}
+          ovirt_password: ${OVIRT_ENGINE_PASSWORD}
+          ovirt_cafile: ""
+          EOF
+
+          cat > /tmp/artifacts/installer/install-config.yaml << EOF
+          apiVersion: v1
+          baseDomain: ${BASE_DOMAIN}
+          metadata:
+            name: ${CLUSTER_NAME}
+          compute:
+          - hyperthreading: Enabled
+            name: worker
+            platform: {}
+            replicas: 2
+          controlPlane:
+            hyperthreading: Enabled
+            name: master
+            platform: {}
+            replicas: 3
+          metadata:
+            name: ${OVIRT_CLUSTER_NAME_P}
+          platform:
+            ovirt:
+              ovirt_cluster_id: ${OVIRT_ENGINE_CLUSTER_ID}
+              ovirt_storage_domain_id: ${OVIRT_ENGINE_STORAGE_DOMAIN_ID}
+              api_vip: ${OVIRT_APIVIP}
+              dns_vip: ${OVIRT_DNSVIP}
+              ingress_vip: ${OVIRT_INGRESSVIP}
+          pullSecret: >
+            ${PULL_SECRET}
+          sshKey: |
+            ${SSH_PUB_KEY}
+          EOF
+
+          ### debug
+          echo "debug"
+          curl -k ${OVIRT_ENGINE_URL::-4}/services/health
+          echo "${OVIRT_CLUSTER_NAME_P}"
+          echo "${BASE_DOMAIN}"
+          echo "${OVIRT_ENGINE_URL}"
+          echo "${OVIRT_ENGINE_USERNAME}"
+          echo "${OVIRT_ENGINE_CLUSTER_ID}"
+          echo "${OVIRT_ENGINE_TEMPLATE_ID}"
+          echo "${OVIRT_APIVIP}"
+          echo "${OVIRT_DNSVIP}"
+          echo "${OVIRT_INGRESSVIP}"
+
+          export OPENSHIFT_INSTALL_RELEASE_IMAGE_OVERRIDE=registry.svc.ci.openshift.org/ovirt/ovirt-release:latest
+          TF_LOG=debug openshift-install --dir=/tmp/artifacts/installer create ignition-configs --log-level=debug
+          python -c \
+              'import json, sys; j = json.load(sys.stdin); j[u"systemd"][u"units"] = [{u"contents": "[Unit]\nDescription=Mount etcd as a ramdisk\nBefore=local-fs.target\n[Mount]\n What=none\nWhere=/var/lib/etcd\nType=tmpfs\nOptions=size=2G\n[Install]\nWantedBy=local-fs.target", u"enabled": True, u"name":u"var-lib-etcd.mount"}]; json.dump(j, sys.stdout)' \
+              </tmp/artifacts/installer/master.ign \
+              >/tmp/artifacts/installer/master.ign.out
+          mv /tmp/artifacts/installer/master.ign.out /tmp/artifacts/installer/master.ign
+
+
+
+          # What we're doing here is we generate manifests first and force that OpenShift SDN is configured.
+          TF_LOG=debug openshift-install --dir=/tmp/artifacts/installer create manifests --log-level=debug
+          TF_LOG=debug openshift-install --dir=/tmp/artifacts/installer create cluster --log-level=debug &
+          wait "$!"
+
+          install_exit_status=$?
+          export KUBECONFIG=/tmp/artifacts/installer/auth/kubeconfig
+          oc patch configs.imageregistry.operator.openshift.io cluster --type merge --patch '{"spec":{"managementState":"Managed","storage":{"emptyDir":{}}}}'
+          sleep 2m
+          oc get co/image-registry
+          exit $install_exit_status
+
+
+      volumes:
+        - name: shared-tmp
+          emptyDir: {}
+        - name: installer-artifacts
+          persistentVolumeClaim:
+            claimName: ovirt-infra-gcp-ws
+        - name: artifacts
+          emptyDir: {}
+        - name: cluster-profile
+          secret:
+            secretName: cluster-secrets-ovirt
+
+      restartPolicy: Never
