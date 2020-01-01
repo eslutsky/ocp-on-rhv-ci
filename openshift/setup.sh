@@ -10,10 +10,11 @@ cat <<__EOF__ >~/.ansible.cfg
 host_key_checking = False
 __EOF__
 
+#echo "preparing ssh keys"
+#cp /runner/gcp-secrets/id_rsa
 
 ansible-inventory -i inventory.compute.gcp.yml host --list
 ansible-playbook -u centos --private-key=/runner/gcp-secrets/id_rsa -i inventory.compute.gcp.yml "$@"
-
 
 
 echo "cleaning up"
