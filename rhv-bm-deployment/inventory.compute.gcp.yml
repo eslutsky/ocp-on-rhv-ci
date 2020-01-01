@@ -1,0 +1,14 @@
+plugin: gcp_compute             # name the plugin you want to use (use `ansible-doc -t inventory -l` to list available plugins)
+projects:
+  - openshift-gce-devel           # Id of your gcp project
+regions:                        # regions from your project you want to fetch inventory from (you can also use zones instead of regions if you target one or several specific zones)
+  - us-central1-c
+filters:
+  - (labels.rhv_role = "rhv-engine") OR (labels.rhv_role = "rhv-host") OR (labels.rhv_role="rhv-host-igm")
+
+keyed_groups:
+  - key: labels.rhv_role
+
+auth_kind: serviceaccount       # gcp authentication kind. with service account you should provide the service account json key file to authenticate
+service_account_file: ocp-on-rhv-service.json   # Service account json keyfile
+
