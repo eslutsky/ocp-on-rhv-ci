@@ -76,7 +76,7 @@
   https://docs.google.com/document/d/1ucF_jgAX0LauboDuaUoLeOc_zz0yj0VPMRr0U-Pj2Bs
 
 
-## networking configuration
+## oVirt Host networking configuration
 -  high level described in this drawing:
    ![GitHub Logo](ocp-on-rhv-bm.png)
     https://www.draw.io/#G1VjPP1e5i_MtSPetnHKW7W-BKhVfxjn-e
@@ -84,16 +84,29 @@
    -    each oVirt host can hold several clusters , each cluster
    must reside on its own l2 network .
    -    each cluster must have its  DNS A record
-   for example cluster `cluster00`:
-     api fqdn: api.ovirt00.gcp.devcluster.openshift.com ,
-     it must resolve to one of the ovirtmgmt public addresses.
+   for example `cluster00`:
+     api fqdn: `api.ovirt00.gcp.devcluster.openshift.com` ,
+     this address resolve to one of the ovirtmgmt public addresses.
    -  haproxy frontend listens to the incoming connections on public fqdn address  and forward the connection to the internal network.
--
+   - ocp cluster dns records:
+      ```bash
+      gcloud dns record-sets list --zone=devcluster | grep -i ovirt0
 
-
-
-
-   -
+      api.ovirt00.gcp.devcluster.openshift.com.                              A     300    150.238.7.59
+      *.apps.ovirt00.gcp.devcluster.openshift.com.                           A     300    150.238.7.59
+      api.ovirt01.gcp.devcluster.openshift.com.                              A     300    150.238.7.60
+      *.apps.ovirt01.gcp.devcluster.openshift.com.                           A     300    150.238.7.60
+      api.ovirt02.gcp.devcluster.openshift.com.                              A     300    150.238.7.61
+      *.apps.ovirt02.gcp.devcluster.openshift.com.                           A     300    150.238.7.61
+      api.ovirt03.gcp.devcluster.openshift.com.                              A     300    169.63.244.89
+      *.apps.ovirt03.gcp.devcluster.openshift.com.                           A     300    169.63.244.89
+      api.ovirt04.gcp.devcluster.openshift.com.                              A     300    169.63.244.90
+      *.apps.ovirt04.gcp.devcluster.openshift.com.                           A     300    169.63.244.90
+      api.ovirt05.gcp.devcluster.openshift.com.                              A     300    169.63.244.91
+      *.apps.ovirt05.gcp.devcluster.openshift.com.                           A     300    169.63.244.91
+      ```
+ -
+ -
 - BM haproxy installation script - tbd
 - uploading rchos template  - tbd
 ## monitoring - tbd
