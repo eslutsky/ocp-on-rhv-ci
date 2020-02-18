@@ -14,7 +14,7 @@
   - create the GCP FW rules to allow internal/outside communication.
 
   ```shell
-    source env.sh
+    source scripts/env.sh
     terraform init
     terraform apply
   ```
