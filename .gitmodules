@@ -1,0 +1,9 @@
+[submodule "rhv-bm-deployment/monitoring/roles/ansible-prometheus"]
+	path = rhv-bm-deployment/monitoring/roles/ansible-prometheus
+	url = git@github.com:cloudalchemy/ansible-prometheus.git
+[submodule "rhv-bm-deployment/monitoring/roles/ansible-node-exporter"]
+	path = rhv-bm-deployment/monitoring/roles/ansible-node-exporter
+	url = git@github.com:cloudalchemy/ansible-node-exporter.git
+[submodule "rhv-bm-deployment/monitoring/roles/ansible-grafana"]
+	path = rhv-bm-deployment/monitoring/roles/ansible-grafana
+	url = git@github.com:cloudalchemy/ansible-grafana.git
