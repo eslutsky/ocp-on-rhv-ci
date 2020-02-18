@@ -78,8 +78,9 @@
 
 ## networking configuration
 -  high level described in this drawing:
+-  ![GitHub Logo](ocp-on-rhv-bm.png)
     https://www.draw.io/#G1VjPP1e5i_MtSPetnHKW7W-BKhVfxjn-e
 
 - BM haproxy installation script - tbd
-
+- uploading rchos template  - tbd
 ## monitoring - tbd
