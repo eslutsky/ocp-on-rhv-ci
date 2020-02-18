@@ -78,9 +78,22 @@
 
 ## networking configuration
 -  high level described in this drawing:
--  ![GitHub Logo](ocp-on-rhv-bm.png)
+   ![GitHub Logo](ocp-on-rhv-bm.png)
     https://www.draw.io/#G1VjPP1e5i_MtSPetnHKW7W-BKhVfxjn-e
+   -    `ovirtmgmt` is the bridge that connected outside.
+   -    each oVirt host can hold several clusters , each cluster
+   must reside on its own l2 network .
+   -    each cluster must have its  DNS A record
+   for example cluster `cluster00`:
+     api fqdn: api.ovirt00.gcp.devcluster.openshift.com ,
+     it must resolve to one of the ovirtmgmt public addresses.
+   -  haproxy frontend listens to the incoming connections on public fqdn address  and forward the connection to the internal network.
+-
 
+
+
+
+   -
 - BM haproxy installation script - tbd
 - uploading rchos template  - tbd
 ## monitoring - tbd
