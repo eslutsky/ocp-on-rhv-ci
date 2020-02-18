@@ -105,8 +105,6 @@
       api.ovirt05.gcp.devcluster.openshift.com.                              A     300    169.63.244.91
       *.apps.ovirt05.gcp.devcluster.openshift.com.                           A     300    169.63.244.91
       ```
- -
- -
 - BM haproxy installation script - tbd
 - uploading rchos template  - tbd
 ## monitoring - tbd
