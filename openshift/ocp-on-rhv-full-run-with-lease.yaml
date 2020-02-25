@@ -239,8 +239,32 @@ spec:
           EOF
 
           export OPENSHIFT_INSTALL_RELEASE_IMAGE_OVERRIDE=registry.svc.ci.openshift.org/ocp/release:4.4-ci
+          #4.4.0-0.nightly-2020-02-06-012716
+          #export OPENSHIFT_INSTALL_RELEASE_IMAGE_OVERRIDE=registry.svc.ci.openshift.org/ocp/release:4.4.0-0.nightly-2020-02-06-012716
+          #export OPENSHIFT_INSTALL_RELEASE_IMAGE_OVERRIDE=registry.svc.ci.openshift.org/ocp/release:4.4.0-0.nightly-2020-02-10-111955
+
+
+          function update_image_registry() {
+            while true; do
+              sleep 10;
+              oc get configs.imageregistry.operator.openshift.io/cluster >/dev/null 2>&1 && break
+            done
+            oc patch configs.imageregistry.operator.openshift.io cluster --type merge --patch '{"spec":{"managementState":"Managed","storage":{"emptyDir":{}}}}'
+          }
+
 
           cd /tmp/artifacts
+          #download oc if missing
+          if [ ! -f oc ] ; then
+            echo "downloading oc binary"
+            wget https://github.com/openshift/origin/releases/download/v3.11.0/openshift-origin-client-tools-v3.11.0-0cbc58b-linux-64bit.tar.gz -O oc-latest-linux-64bit.tar.gz
+            tar xvfz oc-latest-linux-64bit.tar.gz
+            find ./ -type f -name oc | xargs -I {} mv {} oc
+            rm -rf openshift*
+            rm -rf *.tar.gz
+            chmod +x ./oc
+          fi
+          export PATH=$PATH:/tmp/artifacts
 
           TF_LOG=debug openshift-install --dir=/tmp/artifacts/installer create ignition-configs --log-level=debug
           python -c \
@@ -249,7 +273,8 @@ spec:
               >/tmp/artifacts/installer/master.ign.out
           mv /tmp/artifacts/installer/master.ign.out /tmp/artifacts/installer/master.ign
 
-
+          export KUBECONFIG=/tmp/artifacts/installer/auth/kubeconfig
+          update_image_registry &
 
           # What we're doing here is we generate manifests first and force that OpenShift SDN is configured.
           TF_LOG=debug openshift-install --dir=/tmp/artifacts/installer create manifests --log-level=debug
@@ -259,21 +284,7 @@ spec:
           install_exit_status=$?
           export KUBECONFIG=/tmp/artifacts/installer/auth/kubeconfig
 
-
-
-          #download oc if missing
-          if [ ! -f oc ] ; then
-            echo "downloading oc binary"
-            wget https://github.com/openshift/origin/releases/download/v3.11.0/openshift-origin-client-tools-v3.11.0-0cbc58b-linux-64bit.tar.gz -O oc-latest-linux-64bit.tar.gz
-            tar xvfz oc-latest-linux-64bit.tar.gz
-            find ./ -type f -name oc | xargs -I {} mv {} oc
-            rm -rf openshift*
-            rm -rf *.tar.gz
-          fi
-
-          ./oc patch configs.imageregistry.operator.openshift.io cluster --type merge --patch '{"spec":{"managementState":"Managed","storage":{"emptyDir":{}}}}'
-
-          sleep 7m
+          sleep 10m
           ./oc get co/image-registry
 
           exit $install_exit_status
@@ -282,7 +293,7 @@ spec:
 
       - name: run-conformance-tests
         #image: quay.io/rgolangh/openshift-installer@sha256:b06c67502f9d9abaffebe3cccc606815c6d26a3df0c306fed90b5c4267a9cfd1
-        image: 'registry.svc.ci.openshift.org/ovirt/openshift-tests:ovirt'
+        image: 'registry.svc.ci.openshift.org/ovirt/openshift-tests:eslutsky'
         imagePullPolicy: IfNotPresent
         terminationMessagePolicy: FallbackToLogsOnError
         resources:
@@ -348,8 +359,6 @@ spec:
           #!/bin/bash
           set -euo pipefail
 
-          source /tmp/shared/ovirt-lease.conf
-
 
           if [ `id -u` -ge 500 ]; then
               echo "runner:x:`id -u`:`id -g`:,,,:/runner:/bin/bash" > /tmp/passwd
@@ -369,6 +378,7 @@ spec:
           done
           date
 
+          source /tmp/shared/ovirt-lease.conf
           mkdir -p ~/.ssh/
           chmod 700 ~/.ssh/
 
@@ -390,7 +400,10 @@ spec:
 
           cd /tmp/scripts
 
+          sleep 100000
+
           bash -x ./teardown-with-ansible.sh
+          touch /tmp/shared/exit
 
         volumeMounts:
         - name: config-gcp-secrets
@@ -416,7 +429,7 @@ spec:
           projected:
             sources:
             - secret:
-                name: cluster-secrets-ovirt
+                name: cluster-secrets-ovirt-test
             - secret:
                 name: ovirt-infra-secrets
 
