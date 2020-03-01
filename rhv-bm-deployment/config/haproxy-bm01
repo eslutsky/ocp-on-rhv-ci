@@ -73,45 +73,44 @@ frontend  frontend-apps-3 169.63.244.91:443
     default_backend             apps-3
 
 
+#---------------------------------------------------------------------
 # backend for serving internal ocp services
 #---------------------------------------------------------------------
 backend api-1
     balance     roundrobin
     option tcp-check
         timeout server 300000
-    server      static 192.168.200.30:6443 check
+    server      static 192.168.203.30:6443 check
 
 backend apps-1
     balance     roundrobin
     option tcp-check
         timeout server 300000
-    server      static 192.168.200.32:443 check
+    server      static 192.168.203.32:443 check
 
 backend api-2
     balance     roundrobin
     option tcp-check
         timeout server 300000
-    server      static 192.168.200.160:6443 check
+    server      static 192.168.204.30:6443 check
 
 backend apps-2
     balance     roundrobin
     option tcp-check
         timeout server 300000
-    server      static 192.168.200.162:443 check
+    server      static 192.168.204.32:443 check
 
 backend api-3
     balance     roundrobin
     option tcp-check
         timeout server 300000
-    server      static 192.168.200.170:6443 check
+    server      static 192.168.205.30:6443 check
 
 backend apps-3
     balance     roundrobin
     option tcp-check
         timeout server 300000
-    server      static 192.168.200.172:443 check
-
-
+    server      static 192.168.205.32:443 check
 
 listen stats # Define a listen section called "stats"
   bind :8404 # Listen on localhost:9000
@@ -120,4 +119,4 @@ listen stats # Define a listen section called "stats"
   stats hide-version  # Hide HAProxy version
   stats realm Haproxy\ Statistics  # Title text for popup window
   stats uri /haproxy_stats  # Stats URI
-  #stats auth Username:Password  # Authentication credentials
+
